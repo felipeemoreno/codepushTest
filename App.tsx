@@ -1,37 +1,157 @@
-import React, {useEffect} from 'react';
-import {View, Text, StyleSheet, Alert} from 'react-native';
+import React, {useState} from 'react';
+import {View, StyleSheet} from 'react-native';
 import Repos from './src/components/Repos';
 import codePush from 'react-native-code-push';
+import {Provider as PaperProvider} from 'react-native-paper';
+import {
+  ActivityIndicator,
+  Button,
+  Dialog,
+  Paragraph,
+  Portal,
+  Text,
+} from 'react-native-paper';
+import DestructiveButton from './src/components/DestructiveButton';
 
 let codePushOptions = {
   checkFrequency: codePush.CheckFrequency.ON_APP_RESUME,
   installMode: codePush.InstallMode.ON_NEXT_RESTART,
-  // updateDialog: {appendReleaseDescription: true},
 };
 
 const App = () => {
-  useEffect(() => {
-    codePush.checkForUpdate().then(update => {
-      if (!update) {
-        Alert.alert('The app is up to date!');
-        console.log('The app is up to date!');
-      } else {
-        Alert.alert(
-          'An update is available! Should we download it?',
-          update.appVersion,
-        );
-        console.log('An update is available! Should we download it?');
-      }
-    });
-  }, []);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState<boolean>(false);
+  const [hasAvailableUpdate, setHasAvailableUpdate] = useState<boolean>(false);
+  const [hasVerifiedUpdate, setHasVerifiedUpdate] = useState<boolean>(false);
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  const [error, setError] = useState<{code?: string; message?: string} | null>(
+    null,
+  );
+
+  const resetStates = () => {
+    setHasVerifiedUpdate;
+    setIsUpdateDialogOpen(false);
+    setHasAvailableUpdate(false);
+    setHasVerifiedUpdate(false);
+    setError(null);
+    setIsUpdating(false);
+  };
+
+  const handleVerify = async () => {
+    try {
+      setError(null);
+      setIsUpdateDialogOpen(true);
+
+      await codePush.checkForUpdate().then(update => {
+        if (!update) {
+          setHasAvailableUpdate(false);
+        } else {
+          setHasAvailableUpdate(true);
+        }
+        setHasVerifiedUpdate(true);
+      });
+
+      // setIsUpdateDialogOpen(false)
+    } catch (error: any) {
+      setError({
+        code: error?.code,
+        message: error?.message,
+      });
+    }
+  };
+
+  const handleUpdate = async () => {
+    try {
+      setIsUpdating(true);
+      codePush.sync({
+        installMode: codePush.InstallMode.IMMEDIATE,
+      });
+    } catch (error: any) {
+      setError({
+        code: error?.code,
+        message: error?.message,
+      });
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.text}>Lista de Repos</Text>
+    <PaperProvider>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.text}>Lista de Repos</Text>
+        </View>
+        <Repos />
+        <Button onPress={handleVerify}>Verificar atualizações</Button>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingLeft: 8,
+          }}>
+          <Portal>
+            <Dialog visible={isUpdateDialogOpen} onDismiss={resetStates}>
+              <Dialog.Content>
+                {error ? (
+                  <>
+                    <Text>Erro ao atualizar/verificar atualizações.</Text>
+                    {error.code && (
+                      <Text style={{marginVertical: 8, fontWeight: 'bold'}}>
+                        {error.code}
+                      </Text>
+                    )}
+                    {error.message && (
+                      <Text style={{marginVertical: 8, fontWeight: 'bold'}}>
+                        {error.message}
+                      </Text>
+                    )}
+                  </>
+                ) : isUpdating ? (
+                  <>
+                    <ActivityIndicator />
+                    <Paragraph style={{textAlign: 'center', marginTop: 16}}>
+                      Atualizando...
+                    </Paragraph>
+                  </>
+                ) : hasVerifiedUpdate ? (
+                  hasAvailableUpdate ? (
+                    <>
+                      <Paragraph style={{fontWeight: 'bold'}}>
+                        Há uma atualização disponível.
+                      </Paragraph>
+                      <Paragraph>
+                        Deseja atualizar agora? Seu aplicativo será reiniciado.
+                      </Paragraph>
+                    </>
+                  ) : (
+                    <Paragraph style={{textAlign: 'center'}}>
+                      Seu aplicativo já está atualizado!
+                    </Paragraph>
+                  )
+                ) : (
+                  <>
+                    <ActivityIndicator />
+                    <Paragraph style={{textAlign: 'center', marginTop: 16}}>
+                      Verificando atualizações...
+                    </Paragraph>
+                  </>
+                )}
+              </Dialog.Content>
+              {hasAvailableUpdate &&
+                hasVerifiedUpdate &&
+                !error &&
+                !isUpdating && (
+                  <Dialog.Actions>
+                    <DestructiveButton onPress={resetStates}>
+                      Não
+                    </DestructiveButton>
+                    <Button onPress={handleUpdate}>Sim</Button>
+                  </Dialog.Actions>
+                )}
+            </Dialog>
+          </Portal>
+        </View>
       </View>
-      <Repos />
-    </View>
+    </PaperProvider>
   );
 };
 
@@ -40,7 +160,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 10,
+    padding: 0,
   },
   header: {
     backgroundColor: '#666',

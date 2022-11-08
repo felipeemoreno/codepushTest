@@ -17,7 +17,7 @@ const Repos = () => {
   }, []);
 
   return (
-    <ScrollView>
+    <ScrollView style={{backgroundColor: '#EEEEEE', margin: 5}}>
       {repos.map(repo => (
         <Text key={repo.name}>{repo.name}</Text>
       ))}
