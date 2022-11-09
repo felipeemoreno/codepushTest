@@ -237,7 +237,7 @@ android {
         }
         releaseStaging {
             resValue "string", "CodePushDeploymentKey", '"uSoWqkOxHAlsxaASjw_t-GZbRSVKjZAIQtv-6"'
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             // Note: It's a good idea to provide matchingFallbacks for the new buildType you create to prevent build issues
             // Add the following line if not already there
             matchingFallbacks = ['release']

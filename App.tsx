@@ -12,6 +12,7 @@ import {
   Text,
 } from 'react-native-paper';
 import DestructiveButton from './src/components/DestructiveButton';
+import VersionInfo from './src/components/VersionInfo';
 
 let codePushOptions = {
   checkFrequency: codePush.CheckFrequency.ON_APP_RESUME,
@@ -80,6 +81,7 @@ const App = () => {
           <Text style={styles.text}>Lista de Repos</Text>
         </View>
         <Repos />
+        <VersionInfo />
         <Button onPress={handleVerify}>Verificar atualizações</Button>
         <View
           style={{
